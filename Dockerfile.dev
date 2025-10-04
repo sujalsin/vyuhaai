@@ -1,0 +1,57 @@
+# Vyuha AI - Development Dockerfile
+# Optimized for development and testing
+
+FROM python:3.9-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    VYUHA_LOG_LEVEL=DEBUG
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    vim \
+    htop \
+    tree \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app user
+RUN useradd --create-home --shell /bin/bash app
+WORKDIR /app
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install additional development tools
+RUN pip install --no-cache-dir \
+    jupyter \
+    notebook \
+    ipython \
+    black \
+    flake8 \
+    mypy
+
+# Copy application code
+COPY --chown=app:app . .
+
+# Install package in development mode
+RUN pip install -e .
+
+# Create directories for development
+RUN mkdir -p /app/models /app/output /app/logs /app/notebooks
+RUN chown -R app:app /app
+
+# Switch to app user
+USER app
+
+# Expose ports
+EXPOSE 8000 8888
+
+# Default command
+CMD ["/bin/bash"]

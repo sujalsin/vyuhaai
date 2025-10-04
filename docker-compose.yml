@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # Vyuha AI optimization platform
+  vyuha-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: vyuha-ai
+    volumes:
+      - ./models:/app/models
+      - ./output:/app/output
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - VYUHA_LOG_LEVEL=INFO
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import vyuha; print('Vyuha AI is healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Development environment
+  vyuha-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: vyuha-dev
+    volumes:
+      - .:/app
+      - ./models:/app/models
+      - ./output:/app/output
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - VYUHA_LOG_LEVEL=DEBUG
+    ports:
+      - "8001:8000"
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+  # Jupyter notebook for experimentation
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: vyuha-jupyter
+    volumes:
+      - .:/app
+      - ./notebooks:/app/notebooks
+    environment:
+      - PYTHONPATH=/app
+    ports:
+      - "8888:8888"
+    command: >
+      bash -c "pip install jupyter notebook &&
+               jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: vyuha-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  # PostgreSQL for metadata storage (optional)
+  postgres:
+    image: postgres:15-alpine
+    container_name: vyuha-postgres
+    environment:
+      - POSTGRES_DB=vyuha
+      - POSTGRES_USER=vyuha
+      - POSTGRES_PASSWORD=vyuha_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  postgres_data:

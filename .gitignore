@@ -1,0 +1,16 @@
+*.md
+*.pytest_cache
+*.coverage
+*htmlcov
+*.coverage.xml
+*.coverage.json
+*.coverage.txt
+*.coverage.yaml
+*.coverage.yml
+*coverage
+*docker-run.sh
+*docker-test.sh
+*docker-clean.sh
+*docker-simple.sh
+*pytest.ini
+*yc_application.md
